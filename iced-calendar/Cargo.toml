@@ -1,0 +1,12 @@
+[package]
+name = "iced-calendar"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = "0.13.1"
+chrono = "0.4.39"
+
+[profile.dev]
+opt-level = 1
+overflow-checks = false

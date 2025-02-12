@@ -1,0 +1,12 @@
+[package]
+name = "iced-timer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = { version = "0.13.1", features = ["advanced", "tokio", "debug"] }
+uuid = { version = "1.12.1", features = ["v4"] }
+
+[profile.dev]
+opt-level = 1
+overflow-checks = false

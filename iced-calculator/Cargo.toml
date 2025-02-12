@@ -1,0 +1,11 @@
+[package]
+name = "iced-calculator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+iced = "0.13.1"
+
+[profile.dev]
+opt-level = 1
+overflow-checks = false

@@ -1,6 +1,6 @@
 # Rust Iced GUI calculator
 
-Calculator with Rust Iced GUI 0.13? features:
+Calculator with Rust Iced GUI 0.13. features:
 
 * Basic Arithmetic standard arithmetic operators (addition, subtraction, multiplication, division)
 * Trigonometric functions - the sine, cosine, or tangent of an angle, enter the angle in degrees or radians.

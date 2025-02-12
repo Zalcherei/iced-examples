@@ -1,6 +1,6 @@
 # Rust Iced GUI timer
 
-timer with Rust Iced GUI 0.13? features:
+Timer with Rust Iced GUI 0.13. features:
 
 - Name Field
 - Hours, Minutes, Seconds Field - Editable fields. Default should be one minute.

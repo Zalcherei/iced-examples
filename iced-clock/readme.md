@@ -1,6 +1,6 @@
 # Rust Iced GUI clock
 
-How would I create a clock with Rust Iced GUI 0.13? features:
+Clock with Rust Iced GUI 0.13. features:
 
 * Clock should be circle background can be blue
 * Handles - Seconds/minutes/hours

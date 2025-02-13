@@ -23,3 +23,5 @@ Calculator with Rust Iced GUI 0.13. features:
 
 [dependencies]
 iced = "0.13.1"
+
+![calculator](https://github.com/Zalcherei/iced-examples/blob/main/iced-calculator/calculator.png)

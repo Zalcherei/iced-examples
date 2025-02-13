@@ -11,3 +11,5 @@ Timer with Rust Iced GUI 0.13. features:
 [dependencies]
 iced = { version = "0.13.1", features = ["advanced", "tokio", "debug"] }
 uuid = { version = "1.12.1", features = ["v4"] }
+
+![calendar](https://github.com/Zalcherei/iced-examples/blob/main/iced-timer/timer.png)

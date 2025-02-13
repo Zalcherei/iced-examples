@@ -12,3 +12,5 @@ Calendar with Rust Iced GUI 0.13. features:
 [dependencies]
 iced = "0.13.1"
 chrono = "0.4.39"
+
+![calendar](https://github.com/Zalcherei/iced-examples/blob/main/iced-calendar/calendar.png)

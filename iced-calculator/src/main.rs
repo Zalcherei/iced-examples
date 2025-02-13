@@ -1,11 +1,13 @@
 use iced::{
-    widget::{button, column, row, text, text_input, vertical_space},
-    Center, Element, Task, Theme,
+    widget::{button, column, container, row, text, text_input, Button, Column},
+    Center, Element, Fill, Font, Task, Theme,
 };
+use std::f64::consts::{E, PI};
 
 fn main() -> iced::Result {
-    iced::application("Calculator - Iced", Calculator::update, Calculator::view)
+    iced::application("Calculator v2 - Iced", Calculator::update, Calculator::view)
         .theme(|_| Theme::Dark)
+        .default_font(Font::MONOSPACE)
         .run_with(Calculator::new)
 }
 
@@ -27,8 +29,16 @@ enum Message {
     LogFunctionPressed(LogFunction),
     Exponentiate,
     SquareRoot,
-    CubeRoot,
     ToggleAngleMode,
+    Factorial,
+    Square,
+    Cube,
+    Reciprocal,
+    RootY,
+    Exponential,
+    Euler,
+    EE,
+    Percentage,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -84,8 +94,60 @@ impl Calculator {
             Message::LogFunctionPressed(log_fn) => self.apply_log_function(log_fn),
             Message::Exponentiate => self.prepare_exponentiation(),
             Message::SquareRoot => self.apply_root(2.0),
-            Message::CubeRoot => self.apply_root(3.0),
             Message::ToggleAngleMode => self.toggle_angle_mode(),
+            Message::Factorial => {
+                if let Ok(n) = self.input.parse::<u64>() {
+                    self.result = Self::factorial(n).to_string();
+                    self.input.clear();
+                }
+            }
+            Message::Square => {
+                if let Ok(n) = self.input.parse::<f64>() {
+                    self.result = (n * n).to_string();
+                    self.input.clear();
+                }
+            }
+            Message::Cube => {
+                if let Ok(n) = self.input.parse::<f64>() {
+                    self.result = (n * n * n).to_string();
+                    self.input.clear();
+                }
+            }
+            Message::Reciprocal => {
+                if let Ok(n) = self.input.parse::<f64>() {
+                    if n != 0.0 {
+                        self.result = (1.0 / n).to_string();
+                    } else {
+                        self.result = "Error".into();
+                    }
+                    self.input.clear();
+                }
+            }
+            Message::RootY => {
+                if let (Some(base), Ok(root)) = (self.operand, self.input.parse::<f64>()) {
+                    self.result = base.powf(1.0 / root).to_string();
+                    self.input.clear();
+                    self.operand = None;
+                }
+            }
+            Message::Exponential => {
+                if let Ok(n) = self.input.parse::<f64>() {
+                    self.result = n.exp().to_string();
+                    self.input.clear();
+                }
+            }
+            Message::Euler => {
+                self.result = E.to_string();
+            }
+            Message::EE => {
+                self.input.push_str("e");
+            }
+            Message::Percentage => {
+                if let Ok(n) = self.input.parse::<f64>() {
+                    self.result = (n / 100.0).to_string();
+                    self.input.clear();
+                }
+            }
         }
         Task::none()
     }
@@ -175,79 +237,240 @@ impl Calculator {
         };
     }
 
-    fn view(&self) -> Element<Message> {
-        let button_size = 60;
-        let create_button = |label: &'static str, message: Message| {
-            button(text(label).align_x(Center).align_y(Center))
-                .padding(10)
-                .width(button_size)
-                .height(button_size)
-                .on_press(message)
-        };
+    fn factorial(n: u64) -> u64 {
+        (1..=n).product()
+    }
 
-        let clear_button = button(text("C").align_x(Center).align_y(Center))
-            .padding(10)
-            .width(button_size)
-            .height(button_size)
-            .on_press(Message::Clear);
-
-        let angle_mode_button = button(
-            text(match self.angle_mode {
-                AngleMode::Degrees => "Deg",
-                AngleMode::Radians => "Rad",
-            })
-            .align_x(Center)
-            .align_y(Center),
-        )
-        .padding(10)
-        .width(button_size)
-        .height(button_size)
-        .on_press(Message::ToggleAngleMode);
-
-        let buttons = vec![
-            ("7", Message::Input("7".into())),
-            ("8", Message::Input("8".into())),
-            ("9", Message::Input("9".into())),
-            ("/", Message::OperatorPressed(Operator::Divide)),
-            ("4", Message::Input("4".into())),
-            ("5", Message::Input("5".into())),
-            ("6", Message::Input("6".into())),
-            ("*", Message::OperatorPressed(Operator::Multiply)),
-            ("1", Message::Input("1".into())),
-            ("2", Message::Input("2".into())),
-            ("3", Message::Input("3".into())),
-            ("-", Message::OperatorPressed(Operator::Subtract)),
-            ("0", Message::Input("0".into())),
-            (".", Message::Input(".".into())),
-            ("=", Message::Calculate),
-            ("+", Message::OperatorPressed(Operator::Add)),
-            ("sin", Message::TrigFunctionPressed(TrigFunction::Sine)),
-            ("cos", Message::TrigFunctionPressed(TrigFunction::Cosine)),
-            ("tan", Message::TrigFunctionPressed(TrigFunction::Tangent)),
-            ("log", Message::LogFunctionPressed(LogFunction::Log10)),
-            ("ln", Message::LogFunctionPressed(LogFunction::Ln)),
-            ("x^y", Message::Exponentiate),
-            ("√", Message::SquareRoot),
-            ("cbrt", Message::CubeRoot),
-        ];
-
-        let button_grid = buttons.chunks(4).fold(column![].spacing(10), |col, row| {
-            let button_row = row.iter().fold(row![].spacing(10), |r, (label, msg)| {
-                r.push(create_button(label, msg.clone()))
-            });
-            col.push(button_row)
-        });
-
+    fn scientific_buttons(&self) -> Column<Message> {
         column![
-            text(&self.result).size(18),
-            text_input("0", &self.input).size(18),
-            vertical_space(),
-            row![clear_button, angle_mode_button].spacing(10),
-            vertical_space(),
-            button_grid
+            row![
+                button(
+                    text(match self.angle_mode {
+                        AngleMode::Degrees => "Deg",
+                        AngleMode::Radians => "Rad",
+                    })
+                    .size(24)
+                    .align_x(Center)
+                    .align_y(Center)
+                )
+                .width(150)
+                .height(50)
+                .on_press(Message::ToggleAngleMode),
+                calc_button("(", Message::Input("(".into())),
+                calc_button(")", Message::Input(")".into()))
+            ],
+            row![
+                calc_button("sin", Message::TrigFunctionPressed(TrigFunction::Sine)),
+                calc_button("cos", Message::TrigFunctionPressed(TrigFunction::Cosine)),
+                calc_button("tan", Message::TrigFunctionPressed(TrigFunction::Tangent)),
+                calc_button("π", Message::Input(PI.to_string()))
+            ],
+            row![
+                calc_button("x!", Message::Factorial),
+                calc_button("x²", Message::Square),
+                calc_button("x³", Message::Cube),
+                calc_button("xy", Message::Exponentiate)
+            ],
+            row![
+                calc_button("1/x", Message::Reciprocal),
+                calc_button("√x", Message::SquareRoot),
+                calc_button("x√y", Message::RootY),
+                calc_button("EE", Message::EE)
+            ],
+            row![
+                calc_button("log", Message::LogFunctionPressed(LogFunction::Log10)),
+                calc_button("ln", Message::LogFunctionPressed(LogFunction::Ln)),
+                calc_button("eˣ", Message::Exponential),
+                calc_button("e", Message::Euler)
+            ]
         ]
-        .padding(20)
+    }
+
+    fn basic_buttons(&self) -> Column<Message> {
+        column![
+            row![
+                button(text("C").size(24).align_x(Center).align_y(Center))
+                    .width(150)
+                    .height(50)
+                    .on_press(Message::Clear),
+                calc_button("%", Message::Percentage),
+                calc_button("÷", Message::OperatorPressed(Operator::Divide))
+            ],
+            row![
+                calc_button("7", Message::Input("7".into())),
+                calc_button("8", Message::Input("8".into())),
+                calc_button("9", Message::Input("9".into())),
+                calc_button("×", Message::OperatorPressed(Operator::Multiply))
+            ],
+            row![
+                calc_button("4", Message::Input("4".into())),
+                calc_button("5", Message::Input("5".into())),
+                calc_button("6", Message::Input("6".into())),
+                calc_button("−", Message::OperatorPressed(Operator::Subtract))
+            ],
+            row![
+                calc_button("1", Message::Input("1".into())),
+                calc_button("2", Message::Input("2".into())),
+                calc_button("3", Message::Input("3".into())),
+                calc_button("+", Message::OperatorPressed(Operator::Add))
+            ],
+            row![
+                button(text("0").size(24).align_x(Center).align_y(Center))
+                    .width(150)
+                    .height(50)
+                    .on_press(Message::Input("0".into())),
+                calc_button(".", Message::Input(".".into())),
+                calc_button("=", Message::Calculate)
+            ]
+        ]
+    }
+
+    fn view(&self) -> Element<Message> {
+        let result_display = text_input("0", &self.input).size(24).width(602);
+
+        container(row![column![
+            text(&self.result).size(24),
+            result_display,
+            row![self.scientific_buttons(), self.basic_buttons()].spacing(2)
+        ]])
+        .width(Fill)
+        .height(Fill)
+        .align_y(Center)
         .align_x(Center)
         .into()
     }
 }
+
+fn calc_button(label: &str, message: Message) -> Button<Message> {
+    button(text(label).size(24).align_x(Center).align_y(Center))
+        .width(75)
+        .height(50)
+        .on_press(message)
+}
+
+/*
+/// Testing the calculator
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_factorial() {
+        assert_eq!(Calculator::factorial(0), 1);
+        assert_eq!(Calculator::factorial(5), 120);
+        assert_eq!(Calculator::factorial(10), 3628800);
+    }
+
+    #[test]
+    fn test_apply_trig_function() {
+        let mut calc = Calculator::new().0;
+
+        // Test sine function in radians
+        calc.input = "0".to_string();
+        calc.apply_trig_function(TrigFunction::Sine);
+        assert_eq!(calc.result, "0");
+
+        // Test cosine function in degrees
+        calc.angle_mode = AngleMode::Degrees;
+        calc.input = "90".to_string();
+        calc.apply_trig_function(TrigFunction::Cosine);
+        assert_eq!(calc.result, "0");
+
+        // Test tangent function in radians
+        calc.angle_mode = AngleMode::Radians;
+        calc.input = "0".to_string();
+        calc.apply_trig_function(TrigFunction::Tangent);
+        assert_eq!(calc.result, "0");
+    }
+
+    #[test]
+    fn test_apply_log_function() {
+        let mut calc = Calculator::new().0;
+
+        // Test log10
+        calc.input = "100".to_string();
+        calc.apply_log_function(LogFunction::Log10);
+        assert_eq!(calc.result, "2");
+
+        // Test natural log
+        calc.input = E.to_string();
+        calc.apply_log_function(LogFunction::Ln);
+        assert_eq!(calc.result, "1");
+    }
+
+    #[test]
+    fn test_update_input() {
+        let mut calc = Calculator::new().0;
+
+        // Simulate user input
+        calc.update(Message::Input("5".to_string()));
+        assert_eq!(calc.input, "5");
+
+        calc.update(Message::Input("3".to_string()));
+        assert_eq!(calc.input, "53");
+    }
+
+    #[test]
+    fn test_update_clear() {
+        let mut calc = Calculator::new().0;
+
+        // Simulate user input and then clear
+        calc.update(Message::Input("123".to_string()));
+        calc.update(Message::Clear);
+        assert_eq!(calc.input, "");
+        assert_eq!(calc.result, "");
+        assert_eq!(calc.operand, None);
+        // assert_eq!(calc.operator, None);
+    }
+
+    #[test]
+    fn test_update_calculate() {
+        let mut calc = Calculator::new().0;
+
+        // Simulate 5 + 3
+        calc.update(Message::Input("5".to_string()));
+        calc.update(Message::OperatorPressed(Operator::Add));
+        calc.update(Message::Input("3".to_string()));
+        calc.update(Message::Calculate);
+        assert_eq!(calc.result, "8");
+    }
+
+    #[test]
+    fn test_update_toggle_angle_mode() {
+        let mut calc = Calculator::new().0;
+
+        // Initial mode is Radians
+        assert_eq!(calc.angle_mode, AngleMode::Radians);
+
+        // Toggle to Degrees
+        calc.update(Message::ToggleAngleMode);
+        assert_eq!(calc.angle_mode, AngleMode::Degrees);
+
+        // Toggle back to Radians
+        calc.update(Message::ToggleAngleMode);
+        assert_eq!(calc.angle_mode, AngleMode::Radians);
+    }
+
+    #[test]
+    fn test_division_by_zero() {
+        let mut calc = Calculator::new().0;
+
+        // Simulate 1 / 0
+        calc.update(Message::Input("1".to_string()));
+        calc.update(Message::OperatorPressed(Operator::Divide));
+        calc.update(Message::Input("0".to_string()));
+        calc.update(Message::Calculate);
+        assert_eq!(calc.result, "Error");
+    }
+
+    #[test]
+    fn test_invalid_input() {
+        let mut calc = Calculator::new().0;
+
+        // Simulate invalid input
+        calc.update(Message::Input("abc".to_string()));
+        calc.update(Message::Calculate);
+        assert_eq!(calc.result, "");
+    }
+}
+*/

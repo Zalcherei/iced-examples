@@ -1,6 +1,6 @@
 use iced::{
     time,
-    widget::{button, row, text_input, Column},
+    widget::{button, column, container, row, text_input},
     Element, Subscription, Task, Theme,
 };
 use std::time::Duration;
@@ -129,49 +129,57 @@ impl TimerApp {
     }
 
     fn view(&self) -> Element<Message> {
-        let mut column = Column::new().spacing(10);
+        let mut column = column![].padding(10).spacing(10);
 
         for timer in &self.timers {
-            let rows = row![
-                text_input(&timer.name, &timer.name)
-                    .on_input(move |name| Message::NameChanged(timer.id, name)),
-                text_input(&timer.hours.to_string(), &timer.hours.to_string()).on_input(
-                    move |hours| {
-                        if let Ok(hours) = hours.parse() {
-                            Message::HoursChanged(timer.id, hours)
+            let content = container(
+                column![
+                    text_input(&timer.name, &timer.name)
+                        .on_input(move |name| Message::NameChanged(timer.id, name)),
+                    row![
+                        text_input(&timer.hours.to_string(), &timer.hours.to_string()).on_input(
+                            move |hours| {
+                                if let Ok(hours) = hours.parse() {
+                                    Message::HoursChanged(timer.id, hours)
+                                } else {
+                                    Message::HoursChanged(timer.id, 0)
+                                }
+                            }
+                        ),
+                        text_input(&timer.minutes.to_string(), &timer.minutes.to_string())
+                            .on_input(move |minutes| {
+                                if let Ok(minutes) = minutes.parse() {
+                                    Message::MinutesChanged(timer.id, minutes)
+                                } else {
+                                    Message::MinutesChanged(timer.id, 0)
+                                }
+                            }),
+                        text_input(&timer.seconds.to_string(), &timer.seconds.to_string())
+                            .on_input(move |seconds| {
+                                if let Ok(seconds) = seconds.parse() {
+                                    Message::SecondsChanged(timer.id, seconds)
+                                } else {
+                                    Message::SecondsChanged(timer.id, 0)
+                                }
+                            }),
+                    ]
+                    .spacing(5),
+                    row![
+                        if timer.is_running {
+                            button("Stop").on_press(Message::StopTimer(timer.id))
                         } else {
-                            Message::HoursChanged(timer.id, 0)
-                        }
-                    }
-                ),
-                text_input(&timer.minutes.to_string(), &timer.minutes.to_string()).on_input(
-                    move |minutes| {
-                        if let Ok(minutes) = minutes.parse() {
-                            Message::MinutesChanged(timer.id, minutes)
-                        } else {
-                            Message::MinutesChanged(timer.id, 0)
-                        }
-                    }
-                ),
-                text_input(&timer.seconds.to_string(), &timer.seconds.to_string()).on_input(
-                    move |seconds| {
-                        if let Ok(seconds) = seconds.parse() {
-                            Message::SecondsChanged(timer.id, seconds)
-                        } else {
-                            Message::SecondsChanged(timer.id, 0)
-                        }
-                    }
-                ),
-                if timer.is_running {
-                    button("Stop").on_press(Message::StopTimer(timer.id))
-                } else {
-                    button("Start").on_press(Message::StartTimer(timer.id))
-                },
-                button("Delete").on_press(Message::DeleteTimer(timer.id))
-            ]
-            .spacing(10);
+                            button("Start").on_press(Message::StartTimer(timer.id))
+                        },
+                        button("Delete").on_press(Message::DeleteTimer(timer.id)),
+                    ]
+                    .spacing(5)
+                ]
+                .spacing(5),
+            )
+            .padding(10)
+            .style(container::bordered_box);
 
-            column = column.push(rows);
+            column = column.push(content);
         }
 
         column = column.push(button("Add Timer").on_press(Message::AddTimer));
